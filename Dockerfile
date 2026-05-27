@@ -3,17 +3,17 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-COPY MonsoonMasala.sln ./
-COPY src/MonsoonMasala.Domain/MonsoonMasala.Domain.csproj src/MonsoonMasala.Domain/
-COPY src/MonsoonMasala.Application/MonsoonMasala.Application.csproj src/MonsoonMasala.Application/
-COPY src/MonsoonMasala.Infrastructure/MonsoonMasala.Infrastructure.csproj src/MonsoonMasala.Infrastructure/
-COPY src/MonsoonMasala.Api/MonsoonMasala.Api.csproj src/MonsoonMasala.Api/
+COPY SeraphineFlowers.sln ./
+COPY src/SeraphineFlowers.Domain/SeraphineFlowers.Domain.csproj src/SeraphineFlowers.Domain/
+COPY src/SeraphineFlowers.Application/SeraphineFlowers.Application.csproj src/SeraphineFlowers.Application/
+COPY src/SeraphineFlowers.Infrastructure/SeraphineFlowers.Infrastructure.csproj src/SeraphineFlowers.Infrastructure/
+COPY src/SeraphineFlowers.Api/SeraphineFlowers.Api.csproj src/SeraphineFlowers.Api/
 
-RUN dotnet restore src/MonsoonMasala.Api/MonsoonMasala.Api.csproj
+RUN dotnet restore src/SeraphineFlowers.Api/SeraphineFlowers.Api.csproj
 
 COPY . .
 
-RUN dotnet publish src/MonsoonMasala.Api/MonsoonMasala.Api.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish src/SeraphineFlowers.Api/SeraphineFlowers.Api.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS final
 WORKDIR /app

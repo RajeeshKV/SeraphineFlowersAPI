@@ -4,7 +4,7 @@ set -e
 export ASPNETCORE_URLS="http://0.0.0.0:${PORT:-10000}"
 export ASPNETCORE_HTTP_PORTS="${PORT:-10000}"
 
-echo "Starting MonsoonMasala.Api on ${ASPNETCORE_URLS}"
+echo "Starting SeraphineFlowers.Api on ${ASPNETCORE_URLS}"
 
 run_migrations() {
   if [ -z "${ConnectionStrings__DefaultConnection}" ] && [ -z "${DATABASE_URL}" ]; then
@@ -18,8 +18,8 @@ run_migrations() {
 
   cd /src
   until dotnet ef database update \
-      --project src/MonsoonMasala.Infrastructure/MonsoonMasala.Infrastructure.csproj \
-      --startup-project src/MonsoonMasala.Api/MonsoonMasala.Api.csproj \
+      --project src/SeraphineFlowers.Infrastructure/SeraphineFlowers.Infrastructure.csproj \
+      --startup-project src/SeraphineFlowers.Api/SeraphineFlowers.Api.csproj \
       --configuration Release; do
     if [ "${attempt}" -ge "${max_attempts}" ]; then
       echo "Database migrations failed after ${attempt} attempt(s). Check the Render database connection string and migration logs above."
@@ -42,12 +42,12 @@ else
   migration_pid=""
 fi
 
-dotnet /app/MonsoonMasala.Api.dll &
+dotnet /app/SeraphineFlowers.Api.dll &
 app_pid=$!
 
 if [ -n "${migration_pid}" ]; then
   if ! wait "${migration_pid}"; then
-    echo "Migration process failed; stopping MonsoonMasala.Api."
+    echo "Migration process failed; stopping SeraphineFlowers.Api."
     kill "${app_pid}"
     wait "${app_pid}" || true
     exit 1
