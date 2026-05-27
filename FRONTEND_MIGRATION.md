@@ -4,7 +4,7 @@ This file maps the current Seraphine frontend to the new .NET backend so the fro
 
 ## Goal
 
-Move all mutable business data from frontend/serverless JSON into PostgreSQL behind the backend API:
+Move mutable business data from frontend or serverless JSON into PostgreSQL behind the backend API:
 
 - customers
 - offers
@@ -12,16 +12,16 @@ Move all mutable business data from frontend/serverless JSON into PostgreSQL beh
 - flagged numbers
 - promo popup configuration
 - visitor analytics
-- gallery/trending/customer-collection metadata
+- gallery, trending, and customer-collection metadata
 
-Cloudinary remains the image host. The backend becomes the source of truth for config, metadata, and user/admin actions.
+Cloudinary remains the image host. The backend becomes the source of truth for config, metadata, and user or admin actions.
 
 ## Keep vs remove
 
 Keep:
 
 - Cloudinary image hosting
-- optional Firebase phone OTP only if you still want OTP UX
+- Firebase Phone Auth for customer OTP login and registration
 - frontend display components and local UI state
 
 Remove from frontend:
@@ -36,19 +36,20 @@ Remove from frontend:
 - `/api/track-visitor`
 - `/api/auth-admin`
 - any admin password usage in browser env vars
-- Cloudinary JSON writes from browser/serverless
+- Cloudinary JSON writes from browser or serverless functions
 
 ## Firebase decision
 
-Firebase is not needed for customer data storage.
+Firebase is not used for customer data storage.
 
-Recommended path:
+It is now used only for customer OTP verification:
 
-- keep Firebase only if you still want phone OTP verification on the frontend
-- set `Storefront__RequireCustomerOtp=true` only if frontend must enforce OTP before registration
-- otherwise remove Firebase auth usage and rely on normal customer registration plus your own validation flow
+- frontend uses Firebase Phone Auth to send OTP and confirm it
+- frontend reads the Firebase ID token after OTP confirmation
+- backend verifies that Firebase ID token using Firebase Admin SDK
+- backend creates or logs in the customer and returns backend JWT tokens
 
-Current frontend usage shows Firebase is only for OTP/auth UX, not for primary data persistence.
+Set `Storefront__RequireCustomerOtp=true` only when customer registration or login must require OTP.
 
 ## New backend endpoints
 
@@ -68,10 +69,49 @@ Current frontend usage shows Firebase is only for OTP/auth UX, not for primary d
 - `GET /api/public/bootstrap?phone={phone}`
   Returns customer snapshot, active promo, approved reviews, and offer config.
 - `POST /api/public/customers/register`
-  Body: `{ "phone": "...", "name": "..." }`
+  Body: `{ "phone": "...", "name": "...", "firebaseIdToken": "..." }` when OTP is enabled.
 - `POST /api/public/customers/lookup`
-  Body: `{ "phone": "..." }`
+  Body: `{ "phone": "...", "firebaseIdToken": "..." }` when OTP is enabled.
 - `GET /api/public/customers/{phone}`
+
+### Customer OTP authentication
+
+- `POST /api/public/customers/auth/verify-otp`
+  Registers a new customer or verifies an existing one with Firebase OTP.
+- `POST /api/public/customers/auth/login`
+  Logs in an existing customer with Firebase OTP.
+- `POST /api/public/customers/auth/refresh`
+  Refreshes customer access token using refresh token.
+- `POST /api/public/customers/auth/logout`
+  Protected. Revokes the refresh token.
+
+Example registration or verification request:
+
+```json
+{
+  "phone": "9876543210",
+  "name": "Customer Name",
+  "firebaseIdToken": "eyJhbGc..."
+}
+```
+
+Example login request:
+
+```json
+{
+  "phone": "9876543210",
+  "firebaseIdToken": "eyJhbGc..."
+}
+```
+
+Customer auth flow:
+
+1. Frontend sends the phone number to Firebase Phone Auth.
+2. Customer enters the OTP in the frontend.
+3. Firebase confirms the OTP.
+4. Frontend reads the Firebase ID token from the signed-in Firebase user.
+5. Frontend sends `phone` plus `firebaseIdToken` to backend.
+6. Backend verifies the Firebase ID token with Firebase Admin SDK, checks the phone number match, then creates or logs in the customer and returns backend JWT tokens.
 
 ### Public review flow
 
@@ -79,14 +119,14 @@ Current frontend usage shows Firebase is only for OTP/auth UX, not for primary d
 - `POST /api/public/reviews`
   Body: `{ "phone": "...", "name": "...", "rating": 5, "text": "..." }`
 
-### Public safety / promo / media / analytics
+### Public safety, promo, media, analytics
 
 - `POST /api/public/flagged/check`
 - `GET /api/public/promo`
 - `GET /api/public/media/{collectionKey}`
   Use `gallery`, `trending`, or `customercollection`.
 - `GET /api/public/cloudinary/{collectionKey}/images`
-  If you still want direct folder listing through backend.
+  Use if you still want direct folder listing through backend.
 - `POST /api/public/analytics/visits`
 
 ### Admin storefront management
@@ -139,6 +179,9 @@ With:
 
 - `POST {backend}/api/public/customers/register`
 - `POST {backend}/api/public/customers/lookup`
+- `POST {backend}/api/public/customers/auth/verify-otp`
+- `POST {backend}/api/public/customers/auth/login`
+- `POST {backend}/api/public/customers/auth/refresh`
 - `GET {backend}/api/admin/storefront/customers`
 - `POST {backend}/api/admin/storefront/customers/{id}/orders/increment`
 - `POST {backend}/api/admin/storefront/customers`
@@ -147,6 +190,7 @@ With:
 Important:
 
 - the frontend should store customer `id` from backend responses
+- the frontend should store backend customer access and refresh tokens when using the OTP login flow
 - offer labels should come from backend customer response instead of frontend-only calculation
 
 ### `src/utils/reviewService.js`
@@ -154,7 +198,7 @@ Important:
 Replace:
 
 - `/api/reviews`
-- admin password query/body values
+- admin password query or body values
 
 With:
 
@@ -215,7 +259,7 @@ With:
 - `PUT {backend}/api/admin/storefront/media-configs/{collectionKey}`
 - `GET {backend}/api/admin/storefront/cloudinary/{collectionKey}/images`
 
-Each media config row can now include:
+Each media config row can include:
 
 - `imageName`
 - `displayName`
@@ -270,28 +314,34 @@ Remove browser-side secrets:
 Add:
 
 - `VITE_API_BASE_URL=https://your-backend-url`
-- keep Firebase vars only if OTP remains enabled
 
-Backend env already supports:
+Frontend keeps Firebase client config such as:
 
-- Cloudinary credentials
-- per-folder names through `Storefront__Cloudinary__...`
-- offer values
-- raw JSON import source names
-- OTP requirement flag
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_APP_ID`
+
+Backend keeps Firebase Admin verification config such as:
+
+- `Storefront__Firebase__Enabled`
+- `Storefront__Firebase__ProjectId`
+- `Storefront__Firebase__ServiceAccountJsonPath`
+- `Storefront__Firebase__ServiceAccountJsonBase64`
 
 ## Recommended migration order
 
 1. Deploy backend with env vars and DB connection.
-2. Run the current baseline migration `InitialCreate`.
-3. Bootstrap first admin with `/api/admin/auth/bootstrap`.
+2. Apply the backend migrations.
+3. Bootstrap the first admin with `/api/admin/auth/bootstrap`.
 4. Call the one-time import endpoints.
 5. Switch admin login flow to backend JWT.
-6. Switch customer/review/flagged/promo/config/analytics frontend calls to backend URLs.
-7. Remove old Vercel serverless files after verification.
+6. Switch customer, review, flagged, promo, config, analytics, and media frontend calls to backend URLs.
+7. Switch customer OTP flow to Firebase client plus backend verification endpoints.
+8. Remove old Vercel serverless files after verification.
 
 ## Notes
 
 - Customer-facing and admin-facing GET endpoints are intentionally separated.
-- Logged-in/new user experiences can stay nearly the same, but offer logic should now come from backend responses.
+- Logged-in and new user experiences can stay nearly the same, but offer logic should now come from backend responses.
 - Folder names remain configurable through env vars, including import source folders and live Cloudinary collection folders.

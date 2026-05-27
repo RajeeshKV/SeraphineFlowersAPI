@@ -12,8 +12,8 @@ using SeraphineFlowers.Infrastructure.Persistence;
 namespace SeraphineFlowers.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260527115322_AddMediaConfigImageUrlAndRemoveMenuDish")]
-    partial class AddMediaConfigImageUrlAndRemoveMenuDish
+    [Migration("20260527121155_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SeraphineFlowers.Infrastructure.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -70,13 +70,16 @@ namespace SeraphineFlowers.Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    FirebaseUid = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     Phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     Name = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
+                    IsOtpVerified = table.Column<bool>(type: "boolean", nullable: false),
                     RegisteredAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     OrderCount = table.Column<int>(type: "integer", nullable: false),
                     OfferCode = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     Notes = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
                     LastOrderAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    LastLoginAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -106,6 +109,7 @@ namespace SeraphineFlowers.Infrastructure.Persistence.Migrations
                     CollectionKey = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     FolderName = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     ImageName = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
+                    ImageUrl = table.Column<string>(type: "character varying(1200)", maxLength: 1200, nullable: true),
                     DisplayName = table.Column<string>(type: "character varying(300)", maxLength: 300, nullable: false),
                     Description = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
                     Amount = table.Column<decimal>(type: "numeric(10,2)", precision: 10, scale: 2, nullable: true),
@@ -115,23 +119,6 @@ namespace SeraphineFlowers.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_media_asset_configs", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "menus",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "character varying(160)", maxLength: 160, nullable: false),
-                    Slug = table.Column<string>(type: "character varying(180)", maxLength: 180, nullable: false),
-                    Order = table.Column<int>(type: "integer", nullable: false),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_menus", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -224,53 +211,24 @@ namespace SeraphineFlowers.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "dishes",
+                name: "customer_refresh_tokens",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    MenuId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Name = table.Column<string>(type: "character varying(180)", maxLength: 180, nullable: false),
-                    Slug = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
-                    Description = table.Column<string>(type: "character varying(1200)", maxLength: 1200, nullable: true),
-                    Price = table.Column<decimal>(type: "numeric(10,2)", precision: 10, scale: 2, nullable: true),
-                    FoodType = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    Ingredients = table.Column<string>(type: "jsonb", nullable: false),
-                    Metadata = table.Column<string>(type: "jsonb", nullable: true),
-                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
-                    Order = table.Column<int>(type: "integer", nullable: false),
+                    CustomerId = table.Column<Guid>(type: "uuid", nullable: false),
+                    TokenHash = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    ExpiresAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    UpdatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true)
+                    RevokedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    ReplacedByTokenHash = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dishes", x => x.Id);
-                    table.CheckConstraint("CK_dishes_Order_Positive", "\"Order\" > 0");
+                    table.PrimaryKey("PK_customer_refresh_tokens", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_dishes_menus_MenuId",
-                        column: x => x.MenuId,
-                        principalTable: "menus",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "dish_media",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    DishId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Url = table.Column<string>(type: "character varying(1200)", maxLength: 1200, nullable: false),
-                    PublicId = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: false),
-                    MediaType = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_dish_media", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_dish_media_dishes_DishId",
-                        column: x => x.DishId,
-                        principalTable: "dishes",
+                        name: "FK_customer_refresh_tokens_customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "customers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -293,26 +251,32 @@ namespace SeraphineFlowers.Infrastructure.Persistence.Migrations
                 columns: new[] { "IsActive", "ActiveFrom" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_customer_refresh_tokens_CustomerId",
+                table: "customer_refresh_tokens",
+                column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_customer_refresh_tokens_TokenHash",
+                table: "customer_refresh_tokens",
+                column: "TokenHash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_customer_reviews_Phone",
                 table: "customer_reviews",
                 column: "Phone",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_customers_Phone",
+                name: "IX_customers_FirebaseUid",
                 table: "customers",
-                column: "Phone",
+                column: "FirebaseUid",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_dish_media_DishId",
-                table: "dish_media",
-                column: "DishId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_dishes_MenuId_Slug",
-                table: "dishes",
-                columns: new[] { "MenuId", "Slug" },
+                name: "IX_customers_Phone",
+                table: "customers",
+                column: "Phone",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -325,12 +289,6 @@ namespace SeraphineFlowers.Infrastructure.Persistence.Migrations
                 name: "IX_media_asset_configs_CollectionKey_ImageName",
                 table: "media_asset_configs",
                 columns: new[] { "CollectionKey", "ImageName" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_menus_Slug",
-                table: "menus",
-                column: "Slug",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -363,13 +321,10 @@ namespace SeraphineFlowers.Infrastructure.Persistence.Migrations
                 name: "advertisement_media");
 
             migrationBuilder.DropTable(
+                name: "customer_refresh_tokens");
+
+            migrationBuilder.DropTable(
                 name: "customer_reviews");
-
-            migrationBuilder.DropTable(
-                name: "customers");
-
-            migrationBuilder.DropTable(
-                name: "dish_media");
 
             migrationBuilder.DropTable(
                 name: "flagged_customers");
@@ -390,13 +345,10 @@ namespace SeraphineFlowers.Infrastructure.Persistence.Migrations
                 name: "advertisements");
 
             migrationBuilder.DropTable(
-                name: "dishes");
+                name: "customers");
 
             migrationBuilder.DropTable(
                 name: "admin_users");
-
-            migrationBuilder.DropTable(
-                name: "menus");
         }
     }
 }
