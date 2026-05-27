@@ -62,6 +62,16 @@ public sealed class CloudinaryStorefrontService(IOptions<CloudinaryOptions> clou
     {
         return $"https://res.cloudinary.com/{_cloudinaryOptions.CloudName}/raw/upload/{folder}/{publicId}";
     }
+
+    public string BuildImageUrl(string folder, string imageName)
+    {
+        var publicId = imageName.Contains('/', StringComparison.Ordinal)
+            ? imageName
+            : $"{folder}/{imageName}";
+
+        var escapedPublicId = string.Join("/", publicId.Split('/').Select(Uri.EscapeDataString));
+        return $"https://res.cloudinary.com/{_cloudinaryOptions.CloudName}/image/upload/{escapedPublicId}";
+    }
 }
 
 public sealed record CloudinaryImageResource(string PublicId, string Url, string Name);

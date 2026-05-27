@@ -19,7 +19,7 @@ public sealed class AdvertisementsController(
     [HttpGet]
     public async Task<ActionResult<PaginatedResult<AdvertisementDto>>> Get(
         [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] int pageSize = 10,
         CancellationToken cancellationToken = default)
     {
         var advertisements = await getAdvertisementsHandler.HandleAsync(

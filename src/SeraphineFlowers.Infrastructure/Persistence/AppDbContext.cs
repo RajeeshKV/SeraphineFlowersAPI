@@ -1,16 +1,11 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using SeraphineFlowers.Application.Abstractions;
 using SeraphineFlowers.Domain.Entities;
-using System.Text.Json;
 
 namespace SeraphineFlowers.Infrastructure.Persistence;
 
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options), IAppDbContext
 {
-    public DbSet<Menu> Menus => Set<Menu>();
-    public DbSet<Dish> Dishes => Set<Dish>();
-    public DbSet<DishMedia> DishMedia => Set<DishMedia>();
     public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Advertisement> Advertisements => Set<Advertisement>();
@@ -25,60 +20,6 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        var ingredientsComparer = new ValueComparer<List<string>>(
-            (left, right) => JsonSerializer.Serialize(left, JsonSerializerOptions.Default) == JsonSerializer.Serialize(right, JsonSerializerOptions.Default),
-            value => JsonSerializer.Serialize(value, JsonSerializerOptions.Default).GetHashCode(),
-            value => JsonSerializer.Deserialize<List<string>>(JsonSerializer.Serialize(value, JsonSerializerOptions.Default), JsonSerializerOptions.Default) ?? new List<string>());
-
-        modelBuilder.Entity<Menu>(entity =>
-        {
-            entity.ToTable("menus");
-            entity.HasKey(menu => menu.Id);
-            entity.Property(menu => menu.Id).ValueGeneratedNever();
-            entity.Property(menu => menu.Name).HasMaxLength(160).IsRequired();
-            entity.Property(menu => menu.Slug).HasMaxLength(180).IsRequired();
-            entity.HasIndex(menu => menu.Slug).IsUnique();
-            entity.HasMany(menu => menu.Dishes).WithOne(dish => dish.Menu).HasForeignKey(dish => dish.MenuId).OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<Dish>(entity =>
-        {
-            entity.ToTable("dishes", table => table.HasCheckConstraint("CK_dishes_Order_Positive", "\"Order\" > 0"));
-            entity.HasKey(dish => dish.Id);
-            entity.Property(dish => dish.Id).ValueGeneratedNever();
-            entity.Property(dish => dish.Name).HasMaxLength(180).IsRequired();
-            entity.Property(dish => dish.Slug).HasMaxLength(200).IsRequired();
-            entity.Property(dish => dish.Description).HasMaxLength(1200);
-            entity.Property(dish => dish.Price).HasPrecision(10, 2);
-            entity.Property(dish => dish.FoodType)
-                .HasConversion<string>()
-                .HasMaxLength(20)
-                .IsRequired();
-            entity.Property(dish => dish.Ingredients)
-                .HasColumnType("jsonb")
-                .HasConversion(
-                    value => JsonSerializer.Serialize(value, JsonSerializerOptions.Default),
-                    value => JsonSerializer.Deserialize<List<string>>(value, JsonSerializerOptions.Default) ?? new List<string>())
-                .Metadata.SetValueComparer(ingredientsComparer);
-            entity.Property(dish => dish.Metadata).HasColumnType("jsonb");
-            entity.HasIndex(dish => new { dish.MenuId, dish.Slug }).IsUnique();
-            entity.HasMany(dish => dish.Media).WithOne(media => media.Dish).HasForeignKey(media => media.DishId).OnDelete(DeleteBehavior.Cascade);
-        });
-
-        modelBuilder.Entity<DishMedia>(entity =>
-        {
-            entity.ToTable("dish_media");
-            entity.HasKey(media => media.Id);
-            entity.Property(media => media.Id).ValueGeneratedNever();
-            entity.Property(media => media.Url).HasMaxLength(1200).IsRequired();
-            entity.Property(media => media.PublicId).HasMaxLength(500).IsRequired();
-            entity.Property(media => media.MediaType)
-                .HasConversion<string>()
-                .HasMaxLength(20)
-                .IsRequired();
-            entity.HasIndex(media => media.DishId);
-        });
-
         modelBuilder.Entity<AdminUser>(entity =>
         {
             entity.ToTable("admin_users");
@@ -186,6 +127,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(config => config.CollectionKey).HasMaxLength(100).IsRequired();
             entity.Property(config => config.FolderName).HasMaxLength(200).IsRequired();
             entity.Property(config => config.ImageName).HasMaxLength(300).IsRequired();
+            entity.Property(config => config.ImageUrl).HasMaxLength(1200);
             entity.Property(config => config.DisplayName).HasMaxLength(300).IsRequired();
             entity.Property(config => config.Description).HasMaxLength(2000);
             entity.Property(config => config.Amount).HasPrecision(10, 2);

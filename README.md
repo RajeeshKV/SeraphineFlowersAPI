@@ -57,6 +57,7 @@ Everything important is env-configurable:
 - PostgreSQL connection string
 - JWT issuer, audience, secret, token lifetimes
 - Cloudinary credentials
+- Firebase Admin verification for customer OTP
 - Cloudinary folder names for each storefront collection
 - One-time import folder/public ID values
 - Welcome and loyalty offer amounts and cadence
@@ -79,6 +80,16 @@ Cloudinary note:
 
 - `Cloudinary__CloudName`, `Cloudinary__ApiKey`, and `Cloudinary__ApiSecret` are the only Cloudinary credential variables.
 - Folder names are configured only through `Storefront__Cloudinary__...` variables.
+
+Firebase OTP note:
+
+- Customer phone OTP is now frontend Firebase Phone Auth plus backend Firebase Admin token verification.
+- If `Storefront__RequireCustomerOtp=true`, the backend must also have `Storefront__Firebase__Enabled=true`.
+- Backend Firebase verification uses:
+  - `Storefront__Firebase__ProjectId`
+  - either `Storefront__Firebase__ServiceAccountJsonPath`
+  - or `Storefront__Firebase__ServiceAccountJsonBase64`
+- Frontend Firebase client values like API key and auth domain stay in the frontend app, not in backend env.
 
 ## Database migration
 

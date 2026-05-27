@@ -5,9 +5,6 @@ namespace SeraphineFlowers.Application.Abstractions;
 
 public interface IAppDbContext
 {
-    DbSet<Menu> Menus { get; }
-    DbSet<Dish> Dishes { get; }
-    DbSet<DishMedia> DishMedia { get; }
     DbSet<AdminUser> AdminUsers { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<Advertisement> Advertisements { get; }
