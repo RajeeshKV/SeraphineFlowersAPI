@@ -7,7 +7,11 @@ public sealed class StorefrontOptions
     public OfferOptions Offer { get; set; } = new();
     public CloudinaryFolderOptions Cloudinary { get; set; } = new();
     public ImportSourceOptions Imports { get; set; } = new();
+    public FirebaseOptions Firebase { get; set; } = new();
     public bool RequireCustomerOtp { get; set; }
+    public bool EnableCustomerAuth { get; set; } = true;
+    public int CustomerAccessTokenMinutes { get; set; } = 60;
+    public int CustomerRefreshTokenDays { get; set; } = 30;
 }
 
 public sealed class OfferOptions
@@ -35,6 +39,14 @@ public sealed class ImportSourceOptions
     public RawJsonSource GalleryConfig { get; set; } = new("Seraphine-Gallery", "seraphine-config.json");
     public RawJsonSource TrendingConfig { get; set; } = new("Seraphine-Trending", "seraphine-config.json");
     public RawJsonSource CustomerCollectionConfig { get; set; } = new("Seraphine-CustomerCollection", "seraphine-config.json");
+}
+
+public sealed class FirebaseOptions
+{
+    public bool Enabled { get; set; }
+    public string? ProjectId { get; set; }
+    public string? ServiceAccountJsonPath { get; set; }
+    public string? ServiceAccountJsonBase64 { get; set; }
 }
 
 public sealed record RawJsonSource(string Folder, string PublicId);

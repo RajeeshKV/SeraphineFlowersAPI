@@ -128,3 +128,4 @@ public sealed record OfferDto(string Code, string Label, int WelcomeDiscount, in
 public sealed record CustomerDto(Guid Id, string Phone, string Name, DateTimeOffset RegisteredAt, int OrderCount, string Notes, DateTimeOffset? LastOrderAt, OfferDto? Offer);
 public sealed record ReviewDto(Guid Id, string Phone, string Name, int Rating, string Text, string Status, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAt);
 public sealed record PromoDto(Guid Id, bool Active, DateTimeOffset? ActiveFrom, DateTimeOffset? ActiveTo, string AdName, string AdDescription, string RedirectType, string? RedirectValue, string CtaText, bool ShowOncePerDay, IReadOnlyList<string> Images, DateTimeOffset UpdatedAt);
+public sealed record FirebaseConfigDto(bool Enabled, string? ProjectId);

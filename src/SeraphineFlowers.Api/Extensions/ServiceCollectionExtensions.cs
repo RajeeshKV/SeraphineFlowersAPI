@@ -6,6 +6,7 @@ using SeraphineFlowers.Application;
 using SeraphineFlowers.Infrastructure;
 using SeraphineFlowers.Infrastructure.Auth;
 using SeraphineFlowers.Infrastructure.Persistence;
+using SeraphineFlowers.Infrastructure.Storefront;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -30,6 +31,12 @@ public static class ServiceCollectionExtensions
         if (string.IsNullOrWhiteSpace(jwtOptions.Secret))
         {
             throw new InvalidOperationException("JWT secret is not configured. Set Jwt__Secret or configure Jwt:Secret in appsettings.");
+        }
+
+        var storefrontOptions = configuration.GetSection(StorefrontOptions.SectionName).Get<StorefrontOptions>() ?? new StorefrontOptions();
+        if (storefrontOptions.RequireCustomerOtp && !storefrontOptions.Firebase.Enabled)
+        {
+            throw new InvalidOperationException("Customer OTP is required, but Firebase backend verification is disabled. Set Storefront__Firebase__Enabled=true and configure Firebase Admin credentials.");
         }
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

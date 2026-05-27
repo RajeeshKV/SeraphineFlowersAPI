@@ -30,6 +30,12 @@ public static class DependencyInjection
         services.AddScoped<ICommandHandler<LogoutCommand, bool>, LogoutCommandHandler>();
         services.AddScoped<ICommandHandler<ResetPasswordCommand, bool>, ResetPasswordCommandHandler>();
 
+        // Customer auth handlers
+        services.AddScoped<ICommandHandler<VerifyCustomerOtpCommand, CustomerAuthResponse>, VerifyCustomerOtpCommandHandler>();
+        services.AddScoped<ICommandHandler<LoginCustomerWithOtpCommand, CustomerAuthResponse>, LoginCustomerWithOtpCommandHandler>();
+        services.AddScoped<ICommandHandler<RefreshCustomerTokenCommand, CustomerAuthResponse>, RefreshCustomerTokenCommandHandler>();
+        services.AddScoped<ICommandHandler<LogoutCustomerCommand, bool>, LogoutCustomerCommandHandler>();
+
         // Advertisement handlers
         services.AddScoped<IQueryHandler<GetAdvertisementsQuery, PaginatedResult<AdvertisementDto>>, GetAdvertisementsQueryHandler>();
         services.AddScoped<IQueryHandler<GetAdvertisementByIdQuery, AdvertisementDto?>, GetAdvertisementByIdQueryHandler>();
@@ -41,3 +47,4 @@ public static class DependencyInjection
         return services;
     }
 }
+

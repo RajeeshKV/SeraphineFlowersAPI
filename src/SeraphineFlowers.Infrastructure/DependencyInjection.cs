@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SeraphineFlowers.Application.Abstractions;
 using SeraphineFlowers.Infrastructure.Auth;
+using SeraphineFlowers.Infrastructure.Firebase;
 using SeraphineFlowers.Infrastructure.Media;
 using SeraphineFlowers.Infrastructure.Persistence;
 using SeraphineFlowers.Infrastructure.Storefront;
@@ -23,6 +24,7 @@ public static class DependencyInjection
         services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<AppDbContext>());
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<IAuthTokenService, AuthTokenService>();
+        services.AddSingleton<IFirebaseTokenVerifier, FirebaseTokenVerifier>();
         services.AddSingleton<CloudinaryStorefrontService>();
         services.AddScoped<IMediaStorageProxy, CloudinaryMediaStorageProxy>();
         services.AddScoped<IAdvertisementMediaStorageProxy, CloudinaryAdvertisementMediaStorageProxy>();

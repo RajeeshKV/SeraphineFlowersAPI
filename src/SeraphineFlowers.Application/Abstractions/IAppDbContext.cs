@@ -18,5 +18,6 @@ public interface IAppDbContext
     DbSet<PromoCampaign> PromoCampaigns { get; }
     DbSet<MediaAssetConfig> MediaAssetConfigs { get; }
     DbSet<VisitorProfile> VisitorProfiles { get; }
+    DbSet<CustomerRefreshToken> CustomerRefreshTokens { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

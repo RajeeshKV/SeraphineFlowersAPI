@@ -21,6 +21,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<PromoCampaign> PromoCampaigns => Set<PromoCampaign>();
     public DbSet<MediaAssetConfig> MediaAssetConfigs => Set<MediaAssetConfig>();
     public DbSet<VisitorProfile> VisitorProfiles => Set<VisitorProfile>();
+    public DbSet<CustomerRefreshToken> CustomerRefreshTokens => Set<CustomerRefreshToken>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -133,10 +134,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.ToTable("customers");
             entity.HasKey(customer => customer.Id);
             entity.Property(customer => customer.Id).ValueGeneratedNever();
+            entity.Property(customer => customer.FirebaseUid).HasMaxLength(200);
             entity.Property(customer => customer.Phone).HasMaxLength(20).IsRequired();
             entity.Property(customer => customer.Name).HasMaxLength(160).IsRequired();
             entity.Property(customer => customer.OfferCode).HasMaxLength(40).IsRequired();
             entity.Property(customer => customer.Notes).HasMaxLength(2000);
+            entity.HasIndex(customer => customer.FirebaseUid).IsUnique();
             entity.HasIndex(customer => customer.Phone).IsUnique();
         });
 
@@ -202,6 +205,19 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(visitor => visitor.SessionsJson).HasColumnType("jsonb").IsRequired();
             entity.HasIndex(visitor => visitor.VisitorKey).IsUnique();
             entity.HasIndex(visitor => visitor.IpAddress);
+        });
+
+        modelBuilder.Entity<CustomerRefreshToken>(entity =>
+        {
+            entity.ToTable("customer_refresh_tokens");
+            entity.HasKey(token => token.Id);
+            entity.Property(token => token.Id).ValueGeneratedNever();
+            entity.Property(token => token.TokenHash).HasMaxLength(128).IsRequired();
+            entity.Property(token => token.ReplacedByTokenHash).HasMaxLength(128);
+            entity.Ignore(token => token.IsActive);
+            entity.HasIndex(token => token.TokenHash).IsUnique();
+            entity.HasIndex(token => token.CustomerId);
+            entity.HasOne(token => token.Customer).WithMany().HasForeignKey(token => token.CustomerId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SeraphineFlowers.Application.Abstractions;
 using SeraphineFlowers.Domain.Entities;
+using SeraphineFlowers.Infrastructure.Storefront;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
@@ -9,16 +10,17 @@ using System.Text;
 
 namespace SeraphineFlowers.Infrastructure.Auth;
 
-public sealed class AuthTokenService(IOptions<JwtOptions> options) : IAuthTokenService
+public sealed class AuthTokenService(IOptions<JwtOptions> jwtOptions, IOptions<StorefrontOptions> storefrontOptions) : IAuthTokenService
 {
-    private readonly JwtOptions _options = options.Value;
+    private readonly JwtOptions _jwtOptions = jwtOptions.Value;
+    private readonly StorefrontOptions _storefrontOptions = storefrontOptions.Value;
 
     public AuthTokens CreateTokens(AdminUser user)
     {
         var now = DateTimeOffset.UtcNow;
-        var accessExpiresAt = now.AddMinutes(_options.AccessTokenMinutes);
-        var refreshExpiresAt = now.AddDays(_options.RefreshTokenDays);
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_options.Secret));
+        var accessExpiresAt = now.AddMinutes(_jwtOptions.AccessTokenMinutes);
+        var refreshExpiresAt = now.AddDays(_jwtOptions.RefreshTokenDays);
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Secret));
         var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
@@ -32,8 +34,39 @@ public sealed class AuthTokenService(IOptions<JwtOptions> options) : IAuthTokenS
         };
 
         var token = new JwtSecurityToken(
-            issuer: _options.Issuer,
-            audience: _options.Audience,
+            issuer: _jwtOptions.Issuer,
+            audience: _jwtOptions.Audience,
+            claims: claims,
+            notBefore: now.UtcDateTime,
+            expires: accessExpiresAt.UtcDateTime,
+            signingCredentials: credentials);
+
+        var accessToken = new JwtSecurityTokenHandler().WriteToken(token);
+        var refreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
+        return new AuthTokens(accessToken, refreshToken, accessExpiresAt, refreshExpiresAt);
+    }
+
+    public AuthTokens CreateCustomerTokens(Customer customer)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var accessExpiresAt = now.AddMinutes(_storefrontOptions.CustomerAccessTokenMinutes);
+        var refreshExpiresAt = now.AddDays(_storefrontOptions.CustomerRefreshTokenDays);
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Secret));
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
+        {
+            new Claim(JwtRegisteredClaimNames.Sub, customer.Id.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, customer.Id.ToString()),
+            new Claim(ClaimTypes.Name, customer.Phone),
+            new Claim("phone", customer.Phone),
+            new Claim(ClaimTypes.Role, "Customer")
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: _jwtOptions.Issuer,
+            audience: _jwtOptions.Audience,
             claims: claims,
             notBefore: now.UtcDateTime,
             expires: accessExpiresAt.UtcDateTime,
