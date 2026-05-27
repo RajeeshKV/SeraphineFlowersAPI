@@ -63,15 +63,44 @@ Everything important is env-configurable:
 - Whether frontend OTP remains required
 - Allowed CORS origins
 
-See `.env.example` and `src/MonsoonMasala.Api/appsettings.json`.
+Primary files:
+
+- [.env.example](/C:/Personal/SeraphineBackend/SeraphineFlowersAPI/.env.example)
+- [appsettings.json](/C:/Personal/SeraphineBackend/SeraphineFlowersAPI/src/SeraphineFlowers.Api/appsettings.json)
+- [appsettings.Development.json](/C:/Personal/SeraphineBackend/SeraphineFlowersAPI/src/SeraphineFlowers.Api/appsettings.Development.json)
+
+Admin auth note:
+
+- `ADMIN_PASSWORD` and `VITE_ADMIN_PASSWORD` are no longer part of this backend architecture.
+- Admin access now works through bootstrap admin creation plus JWT login.
+- The critical backend auth secret is `Jwt__Secret`.
+
+Cloudinary note:
+
+- `Cloudinary__CloudName`, `Cloudinary__ApiKey`, and `Cloudinary__ApiSecret` are the only Cloudinary credential variables.
+- Folder names are configured only through `Storefront__Cloudinary__...` variables.
 
 ## Database migration
 
-The new storefront tables are added in:
+Current baseline migration:
 
-- `src/MonsoonMasala.Infrastructure/Persistence/Migrations/20260527054218_AddSeraphineStorefront.cs`
+- [20260527065826_InitialCreate.cs](/C:/Personal/SeraphineBackend/SeraphineFlowersAPI/src/SeraphineFlowers.Infrastructure/Persistence/Migrations/20260527065826_InitialCreate.cs)
 
 Apply migrations with your normal deployment flow or with `RUN_MIGRATIONS=true`.
+
+## Build and run
+
+Build:
+
+```powershell
+dotnet build SeraphineFlowers.sln
+```
+
+Run API:
+
+```powershell
+dotnet run --project src\SeraphineFlowers.Api\SeraphineFlowers.Api.csproj
+```
 
 ## Frontend integration guide
 

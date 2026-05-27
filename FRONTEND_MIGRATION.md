@@ -275,7 +275,7 @@ Add:
 Backend env already supports:
 
 - Cloudinary credentials
-- per-folder names
+- per-folder names through `Storefront__Cloudinary__...`
 - offer values
 - raw JSON import source names
 - OTP requirement flag
@@ -283,7 +283,7 @@ Backend env already supports:
 ## Recommended migration order
 
 1. Deploy backend with env vars and DB connection.
-2. Run migration `AddSeraphineStorefront`.
+2. Run the current baseline migration `InitialCreate`.
 3. Bootstrap first admin with `/api/admin/auth/bootstrap`.
 4. Call the one-time import endpoints.
 5. Switch admin login flow to backend JWT.

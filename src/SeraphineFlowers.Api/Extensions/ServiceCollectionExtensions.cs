@@ -27,6 +27,11 @@ public static class ServiceCollectionExtensions
         services.AddConfiguredCors(configuration);
 
         var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>() ?? new JwtOptions();
+        if (string.IsNullOrWhiteSpace(jwtOptions.Secret))
+        {
+            throw new InvalidOperationException("JWT secret is not configured. Set Jwt__Secret or configure Jwt:Secret in appsettings.");
+        }
+
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
@@ -74,6 +79,7 @@ public static class ServiceCollectionExtensions
         services.AddSwaggerGen(options =>
         {
             options.SwaggerDoc("v1", new OpenApiInfo { Title = "Seraphine Flowers API", Version = "v1" });
+            options.CustomSchemaIds(type => (type.FullName ?? type.Name).Replace("+", "."));
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
             {
                 Name = "Authorization",

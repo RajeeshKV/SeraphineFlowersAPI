@@ -4,12 +4,16 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using SeraphineFlowers.Application.Abstractions;
 using SeraphineFlowers.Domain.Entities;
+using SeraphineFlowers.Infrastructure.Storefront;
 
 namespace SeraphineFlowers.Infrastructure.Media;
 
-public sealed class CloudinaryAdvertisementMediaStorageProxy(IOptions<CloudinaryOptions> options) : IAdvertisementMediaStorageProxy
+public sealed class CloudinaryAdvertisementMediaStorageProxy(
+    IOptions<CloudinaryOptions> options,
+    IOptions<StorefrontOptions> storefrontOptions) : IAdvertisementMediaStorageProxy
 {
     private readonly CloudinaryOptions _options = options.Value;
+    private readonly string _folder = storefrontOptions.Value.Cloudinary.PromoAdsFolder;
 
     public async Task<IReadOnlyList<UploadedMedia>> UploadAsync(IFormFileCollection files, CancellationToken cancellationToken = default)
     {
@@ -35,7 +39,7 @@ public sealed class CloudinaryAdvertisementMediaStorageProxy(IOptions<Cloudinary
                 result = await cloudinary.UploadAsync(new VideoUploadParams
                 {
                     File = new FileDescription(file.FileName, stream),
-                    Folder = _options.AdvertisementFolder,
+                    Folder = _folder,
                     UseFilename = true,
                     UniqueFilename = true,
                     Overwrite = false
@@ -46,7 +50,7 @@ public sealed class CloudinaryAdvertisementMediaStorageProxy(IOptions<Cloudinary
                 result = await cloudinary.UploadAsync(new ImageUploadParams
                 {
                     File = new FileDescription(file.FileName, stream),
-                    Folder = _options.AdvertisementFolder,
+                    Folder = _folder,
                     UseFilename = true,
                     UniqueFilename = true,
                     Overwrite = false
